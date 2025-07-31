@@ -1,0 +1,4 @@
+Flask
+torch
+gunicorn
+# your other dependencies
