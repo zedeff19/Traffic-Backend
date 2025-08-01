@@ -73,20 +73,38 @@ def load_model_and_scaler():
         input_size = len(feature_order)  # Updated to 14 features
         model = TaxiFareModel(input_size=input_size)
         
-        # Load trained weights
-        model_path = 'best_taxi_fare_model.pth'
-        if os.path.exists(model_path):
+        # Try to load compressed model first, then fall back to original
+        compressed_model_path = 'model_compressed.pth'
+        original_model_path = 'models/best_taxi_fare_model.pth'
+        
+        model_loaded = False
+        
+        # Try compressed model first
+        if os.path.exists(compressed_model_path):
             try:
-                model.load_state_dict(torch.load(model_path, map_location='cpu'))
+                # For quantized models, we need to load differently
+                model.load_state_dict(torch.load(compressed_model_path, map_location='cpu'))
                 model.eval()
-                logger.info("Model loaded successfully")
+                logger.info("Compressed model loaded successfully")
+                model_loaded = True
             except Exception as e:
-                logger.warning(f"Error loading model weights: {e}. Using untrained model.")
-        else:
-            logger.warning(f"Model file {model_path} not found. Using untrained model.")
+                logger.warning(f"Error loading compressed model: {e}. Trying original model...")
+        
+        # Fall back to original model if compressed model failed or doesn't exist
+        if not model_loaded and os.path.exists(original_model_path):
+            try:
+                model.load_state_dict(torch.load(original_model_path, map_location='cpu'))
+                model.eval()
+                logger.info("Original model loaded successfully")
+                model_loaded = True
+            except Exception as e:
+                logger.warning(f"Error loading original model weights: {e}. Using untrained model.")
+        
+        if not model_loaded:
+            logger.warning("No model file found. Using untrained model.")
         
         # Load scaler
-        scaler_path = '../best_models/scaler.pkl'
+        scaler_path = 'models/scaler.pkl'
         if os.path.exists(scaler_path):
             try:
                 with open(scaler_path, 'rb') as f:

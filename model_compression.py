@@ -41,7 +41,7 @@ def compress_model():
     model = TaxiFareModel(input_size=input_size)
     
     # Load trained weights
-    model_path = 'best_taxi_fare_model.pth'
+    model_path = './models/best_taxi_fare_model.pth'
     if not os.path.exists(model_path):
         print(f"Error: Model file '{model_path}' not found!")
         return False
